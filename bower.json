@@ -1,0 +1,10 @@
+{
+    "name": "angular-tree-autocomplete",
+    "version": "0.0.1",
+    "dependencies": {},
+    "devDependencies": {},
+    "main": [
+        "src/tree-autocomplete.js",
+        "src/tree-autocomplete.css"
+    ]
+}
