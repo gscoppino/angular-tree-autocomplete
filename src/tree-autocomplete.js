@@ -1,5 +1,21 @@
 angular.module('angularTreeAutocomplete', [])
 
+.filter('DemoSiblings', ['$q', '$filter', function($q, $filter) {
+    return function(query, source) {
+        var filterDeferred = $q.defer();
+        filterDeferred.resolve($filter('filter')(source, function(value, index) {
+            var value_name_match = value.name.substring(0, query.length).toLowerCase();
+            var value_id_match = value.id.substring(0, query.length).toLowerCase();
+
+            if (value_name_match === query.toLowerCase() || value_id_match === query.toLowerCase()) {
+                return true;
+            } else {
+                return false;
+            }
+        }, false));
+        return filterDeferred.promise;
+    }
+}])
 .filter('siblings', ['$q', '$filter', function($q, $filter) {
     return function(query, source) {
         var filterDeferred = $q.defer();
@@ -38,7 +54,8 @@ angular.module('angularTreeAutocomplete', [])
         require: 'ngModel',
         scope: {
             'lookup': '@',
-            'source': '='
+            'source': '=',
+            'callback': '&'
         },
         link: function(scope, iElement, iAttrs, ngModelCtrl) {
             console.log("Loaded Lookup");
@@ -47,12 +64,16 @@ angular.module('angularTreeAutocomplete', [])
                 var result = resultObj.result;
                 console.log(result, ngModelCtrl);
 
-                ngModelCtrl.$viewValue = result.name;
                 ngModelCtrl.$modelValue = result.id;
+                ngModelCtrl.$viewValue = result.name;
                 ngModelCtrl.$render();
 
                 console.log(ngModelCtrl.$viewValue, ngModelCtrl.$modelValue);
+                if (scope.callback()) {
+                    callback()(result);
+                }
             }
+            scope.inputEl = iElement[0];
 
             ngModelCtrl.$parsers.unshift(function(input) {
                 lookupService.findResults(input, scope.lookup, scope.source).then(function(results) {
@@ -61,7 +82,8 @@ angular.module('angularTreeAutocomplete', [])
                     iElement.after($compile('' +
                         '<div lookup-results class="autocomplete" ' +
                             'current-results="currentResults" ' +
-                            'option-select="selectOption">' +
+                            'option-select="selectOption"' +
+                            'focus-target="inputEl">' +
                         '</div>')(scope));
                 });
             });
@@ -91,7 +113,8 @@ angular.module('angularTreeAutocomplete', [])
         restrict: 'A',
         scope: {
             'currentResults': '=',
-            'optionSelect': '&'
+            'optionSelect': '&',
+            'focusTarget': '='
         },
         template: '<div lookup-result ng-repeat="result in currentResults">' +
                        '<div>' + '{{ result.name }}' + '</div>' +
@@ -103,8 +126,9 @@ angular.module('angularTreeAutocomplete', [])
         restrict: 'A',
         link: function(scope, iElement, iAttrs) {
             iElement.on('click', function() {
-                iElement.parent().remove();
                 scope.optionSelect()({ 'result': scope.result });
+                scope.$parent.focusTarget.focus();
+                iElement.parent().remove();
             });
         }
     }
