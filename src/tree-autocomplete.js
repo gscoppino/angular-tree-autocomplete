@@ -43,6 +43,16 @@ angular.module('angularTreeAutocomplete', [])
         link: function(scope, iElement, iAttrs, ngModelCtrl) {
             console.log("Loaded Lookup");
             scope.currentResults = [];
+            scope.selectOption = function(resultObj) {
+                var result = resultObj.result;
+                console.log(result, ngModelCtrl);
+
+                ngModelCtrl.$viewValue = result.name;
+                ngModelCtrl.$modelValue = result.id;
+                ngModelCtrl.$render();
+
+                console.log(ngModelCtrl.$viewValue, ngModelCtrl.$modelValue);
+            }
 
             ngModelCtrl.$parsers.unshift(function(input) {
                 lookupService.findResults(input, scope.lookup, scope.source).then(function(results) {
@@ -50,7 +60,8 @@ angular.module('angularTreeAutocomplete', [])
                     angular.element(document.querySelectorAll('.autocomplete')).remove();
                     iElement.after($compile('' +
                         '<div lookup-results class="autocomplete" ' +
-                            'current-results="currentResults">' +
+                            'current-results="currentResults" ' +
+                            'option-select="selectOption">' +
                         '</div>')(scope));
                 });
             });
@@ -79,12 +90,11 @@ angular.module('angularTreeAutocomplete', [])
     return {
         restrict: 'A',
         scope: {
-            'currentResults': '='
+            'currentResults': '=',
+            'optionSelect': '&'
         },
         template: '<div lookup-result ng-repeat="result in currentResults">' +
-                       '<div ng-model="result">' +
-                           '{{ result.name }}' +
-                       '</div>' +
+                       '<div>' + '{{ result.name }}' + '</div>' +
                   '</div>'
     }
 })
@@ -94,6 +104,7 @@ angular.module('angularTreeAutocomplete', [])
         link: function(scope, iElement, iAttrs) {
             iElement.on('click', function() {
                 iElement.parent().remove();
+                scope.optionSelect()({ 'result': scope.result });
             });
         }
     }
