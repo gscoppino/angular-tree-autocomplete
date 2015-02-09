@@ -9,6 +9,7 @@
 }
 
 .autocomplete > div:hover {
-    background-color: #0000FF;
+    background-color: #0088FF;
     color: white;
+    font-weight: bold;
 }

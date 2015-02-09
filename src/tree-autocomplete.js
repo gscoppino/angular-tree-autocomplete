@@ -76,6 +76,7 @@ angular.module('angularTreeAutocomplete', [])
             scope.inputEl = iElement[0];
 
             ngModelCtrl.$parsers.unshift(function(input) {
+                console.log(ngModelCtrl.$viewValue, ngModelCtrl.$modelValue);
                 lookupService.findResults(input, scope.lookup, scope.source).then(function(results) {
                     scope.currentResults = results;        
                     angular.element(document.querySelectorAll('.autocomplete')).remove();
