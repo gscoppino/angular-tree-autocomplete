@@ -85,6 +85,10 @@ angular.module('angularTreeAutocomplete', [])
                 }
             }
 
+            ngModelCtrl.$render = function() {
+                iElement.val(ngModelCtrl.$viewValue);
+            }
+
             ngModelCtrl.$parsers.unshift(function(input) {
                 console.log(ngModelCtrl.$viewValue, ngModelCtrl.$modelValue);
                 if (input.match(/^([0-9a-fA-F]{24})/) && scope.currentResults.length) {
