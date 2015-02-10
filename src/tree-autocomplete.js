@@ -86,12 +86,20 @@ angular.module('angularTreeAutocomplete', [])
             }
 
             ngModelCtrl.$parsers.unshift(function(input) {
+                console.log(ngModelCtrl.$viewValue, ngModelCtrl.$modelValue);
                 if (input.match(/^([0-9a-fA-F]{24})/) && scope.currentResults.length) {
                     // This is a match even if the user doesn't select it explicitly.
+                    // Remove the autocomplete from the DOM and update the modelValue.
+
+                    var $nextEl = iElement.next();
+                    if ($nextEl.hasClass('autocomplete')) {
+                        $nextEl.remove();
+                        $nextEl = undefined;
+                    }
+
                     return input;
                 } else {
                     /** React to the user input by doing a lookup **/
-                    console.log(ngModelCtrl.$viewValue, ngModelCtrl.$modelValue);
                     scope.inputHasFocus = true;
 
                     lookupService.findResults(input, scope.lookup, scope.source).then(function(results) {
