@@ -86,6 +86,7 @@ angular.module('angularTreeAutocomplete', [])
             }
 
             ngModelCtrl.$parsers.unshift(function(input) {
+                /** React to the user input by doing a lookup **/
                 console.log(ngModelCtrl.$viewValue, ngModelCtrl.$modelValue);
                 scope.inputHasFocus = true;
 
@@ -99,7 +100,14 @@ angular.module('angularTreeAutocomplete', [])
                         '</div>')(scope));
                 });
 
-                return input;
+                /** Update the modelValue appropriately **/
+                if (input.match(/^([0-9a-fA-F]{24})/) && scope.currentResults.length) {
+                    // This is a match even if the user doesn't select it explicitly
+                    return input;
+                } else {
+                    // Otherwise we will programmatically handle updating the value when the user clicks a result.
+                    return undefined;
+                }
             });
 
            iElement.on('blur', function(event) {
