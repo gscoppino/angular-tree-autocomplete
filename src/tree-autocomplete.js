@@ -98,6 +98,8 @@ angular.module('angularTreeAutocomplete', [])
                              'option-select="selectOption">' +
                         '</div>')(scope));
                 });
+
+                return input;
             });
 
            iElement.on('blur', function(event) {
