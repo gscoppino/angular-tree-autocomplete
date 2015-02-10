@@ -86,26 +86,25 @@ angular.module('angularTreeAutocomplete', [])
             }
 
             ngModelCtrl.$parsers.unshift(function(input) {
-                /** React to the user input by doing a lookup **/
-                console.log(ngModelCtrl.$viewValue, ngModelCtrl.$modelValue);
-                scope.inputHasFocus = true;
-
-                lookupService.findResults(input, scope.lookup, scope.source).then(function(results) {
-                    scope.currentResults = results;        
-                    angular.element(document.querySelectorAll('.autocomplete')).remove();
-                    iElement.after($compile('' +
-                        '<div lookup-results ng-show="inputHasFocus" class="autocomplete" ' +
-                             'current-results="currentResults" ' +
-                             'option-select="selectOption">' +
-                        '</div>')(scope));
-                });
-
-                /** Update the modelValue appropriately **/
                 if (input.match(/^([0-9a-fA-F]{24})/) && scope.currentResults.length) {
-                    // This is a match even if the user doesn't select it explicitly
+                    // This is a match even if the user doesn't select it explicitly.
                     return input;
                 } else {
-                    // Otherwise we will programmatically handle updating the value when the user clicks a result.
+                    /** React to the user input by doing a lookup **/
+                    console.log(ngModelCtrl.$viewValue, ngModelCtrl.$modelValue);
+                    scope.inputHasFocus = true;
+
+                    lookupService.findResults(input, scope.lookup, scope.source).then(function(results) {
+                        scope.currentResults = results;        
+                        angular.element(document.querySelectorAll('.autocomplete')).remove();
+                        iElement.after($compile('' +
+                            '<div lookup-results ng-show="inputHasFocus" class="autocomplete" ' +
+                                 'current-results="currentResults" ' +
+                                 'option-select="selectOption">' +
+                            '</div>')(scope));
+                    });
+
+                    // Leave the model undefined for now.
                     return undefined;
                 }
             });
