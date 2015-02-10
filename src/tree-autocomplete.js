@@ -46,6 +46,14 @@ angular.module('angularTreeAutocomplete', [])
 }])
 
 .service('lookupService', ['$q', '$filter', function($q, $filter) {
+    this.getResultById = function(id, filter, source) {
+        var resultDeferred = $q.defer();
+        $filter(filter)(id, source).then(function(results) {
+            resultDeferred.resolve(results[0]);
+        });
+        return resultDeferred.promise;
+    }
+
     this.findResults = function(query, filter, source) {
         var resultsDeferred = $q.defer();
 
@@ -67,7 +75,16 @@ angular.module('angularTreeAutocomplete', [])
             'callback': '&'
         },
         link: function(scope, iElement, iAttrs, ngModelCtrl) {
-            console.log("Loaded Lookup");
+            // Set the initial value of the input to the object name, for accessibility.
+            var unregisterFn = scope.$watch(function() { return ngModelCtrl.$modelValue; }, initialize);
+            function initialize(value) {
+                lookupService.getResultById(value, scope.lookup, scope.source).then(function(result) {
+                    ngModelCtrl.$viewValue = result.name;
+                    ngModelCtrl.$render();
+                });
+                unregisterFn();
+            }
+
             scope.currentResults = [];
             scope.inputHasFocus = true;
             scope.selectOption = function(resultObj) {
