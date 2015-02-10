@@ -78,11 +78,13 @@ angular.module('angularTreeAutocomplete', [])
             // Set the initial value of the input to the object name, for accessibility.
             var unregisterFn = scope.$watch(function() { return ngModelCtrl.$modelValue; }, initialize);
             function initialize(value) {
-                lookupService.getResultById(value, scope.lookup, scope.source).then(function(result) {
-                    ngModelCtrl.$viewValue = result.name;
-                    ngModelCtrl.$render();
-                });
-                unregisterFn();
+                if (typeof(value) === 'string') {
+                    lookupService.getResultById(value, scope.lookup, scope.source).then(function(result) {
+                        ngModelCtrl.$viewValue = result.name;
+                        ngModelCtrl.$render();
+                    });
+                    unregisterFn();
+                }
             }
 
             scope.currentResults = [];
