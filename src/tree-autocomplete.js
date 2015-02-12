@@ -20,30 +20,6 @@ angular.module('angularTreeAutocomplete', [])
         return filterDeferred.promise;
     }
 }])
-.filter('siblings', ['$q', '$filter', function($q, $filter) {
-    return function(query, source) {
-        var filterDeferred = $q.defer();
-        var childBlocks = source.children.filter(function(child) {
-            return child._cls === 'Node.Block';
-        });
-
-        var nameSearch = new RegExp(query.trim(), "gi"); // global case insensitive.
-        var idSearch = new RegExp('^' + query.trim()); // match from beginning of string.
-        filterDeferred.resolve($filter('filter')(childBlocks, function(obj, index) {
-            var name_match = nameSearch.test(obj.name);
-            var id_match = idSearch.test(obj.id);
-
-            if (name_match || id_match) {
-                return true;
-            } else {
-                return false;
-            }
-        }, false));
-
-        // TODO can also return the matches from the regex for highlighting of results
-        return filterDeferred.promise;
-    }
-}])
 
 .service('lookupService', ['$q', '$filter', function($q, $filter) {
     this.getResultById = function(id, filter, source) {
