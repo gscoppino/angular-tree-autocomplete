@@ -9,13 +9,57 @@ angular.module('angularTreeAutocomplete', [])
         filterDeferred.resolve($filter('filter')(source, function(obj, index) {
             var name_match = nameSearch.test(obj.name);
             var id_match = idSearch.test(obj.id);
-
-            if (name_match || id_match) {
-                return true;
-            } else {
-                return false;
-            }
+            return name_match || id_match;
         }, false));
+
+        return filterDeferred.promise;
+    }
+}])
+
+.filter('DemoChildren', ['$q', '$filter', function($q, $filter) {
+    return function(query, source) {
+        var filterDeferred = $q.defer();
+        var filterSet = source.children.filter(function(child) {
+            return child.type === 'BLK';
+        });
+
+        var nameSearch = new RegExp(query.trim(), "gi");
+        var idSearch = new RegExp('^' + query.trim());
+        filterDeferred.resolve($filter('filter')(filterSet, function(obj, index) {
+            var name_match = nameSearch.test(obj.name);
+            var id_match = idSearch.test(obj.id);
+            return (name_match || id_match)
+
+        }, false));
+
+        return filterDeferred.promise;
+    }
+}])
+
+.filter('DemoNamespaces', ['$q', '$filter', function($q, $filter) {
+    return function(query, source) {
+        var filterDeferred = $q.defer();
+        var query = query.split('.');
+        if (query.length === 1) {
+            $filter('DemoSiblings')(query[0], source).then(function(results) {
+                filterDeferred.resolve(results);
+            });
+        } else if (query.length > 1) {
+            $filter('DemoSiblings')(query[0], source).then(function(results) {
+                var childSet = results[0].children.filter(function(child) {
+                    return child.type === 'ATTR';
+                });
+
+                var nameSearch = new RegExp(query[1].trim(), "gi");
+                var idSearch = new RegExp('^' + query[1].trim());
+
+                filterDeferred.resolve($filter('filter')(childSet, function(obj, index) {
+                    var name_match = nameSearch.test(obj.name);
+                    var id_match = idSearch.test(obj.id);
+                    return (name_match || id_match);
+                }, false));
+            });
+        }
 
         return filterDeferred.promise;
     }
@@ -67,14 +111,12 @@ angular.module('angularTreeAutocomplete', [])
             scope.inputHasFocus = true;
             scope.selectOption = function(resultObj) {
                 var result = resultObj.result;
-                console.log(result, ngModelCtrl);
 
                 ngModelCtrl.$modelValue = result.id;
                 ngModelCtrl.$viewValue = result.name;
                 ngModelCtrl.$render();
                 iElement[0].focus();
 
-                console.log(ngModelCtrl.$viewValue, ngModelCtrl.$modelValue);
                 if (scope.callback()) {
                     callback()(result);
                 }
@@ -85,7 +127,6 @@ angular.module('angularTreeAutocomplete', [])
             }
 
             ngModelCtrl.$parsers.unshift(function(input) {
-                console.log(ngModelCtrl.$viewValue, ngModelCtrl.$modelValue);
                 if (input.match(/^([0-9a-fA-F]{24})/) && scope.currentResults.length) {
                     // This is a match even if the user doesn't select it explicitly.
                     // Remove the autocomplete from the DOM and update the modelValue.
@@ -102,6 +143,10 @@ angular.module('angularTreeAutocomplete', [])
                     scope.inputHasFocus = true;
 
                     lookupService.findResults(input, scope.lookup, scope.source).then(function(results) {
+                        if (angular.equals(results, scope.currentResults)) {
+                            return;
+                        }
+
                         scope.currentResults = results;        
                         angular.element(document.querySelectorAll('.autocomplete')).remove();
                         iElement.after($compile('' +
@@ -116,9 +161,16 @@ angular.module('angularTreeAutocomplete', [])
                 }
             });
 
-           iElement.on('blur', function(event) {
+            iElement.on('keyup', function(event) {
+                if (event.keyCode === 13) {
+                    scope.selectOption({ 'result': scope.currentResults[0] });
+                    angular.element(document.querySelectorAll('.autocomplete')).remove();
+                }
+            });
+
+            iElement.on('blur', function(event) {
                 // if a user clicks on/in the autocomplete inputHasFocus should remain true
-           });
+            });
         }
     }
 }])
