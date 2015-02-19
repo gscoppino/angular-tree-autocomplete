@@ -26,6 +26,7 @@ angular.module('angularTreeAutocomplete', [])
         require: 'ngModel',
         scope: {
             'lookup': '@',
+            'init': '=',
             'source': '=',
             'callback': '&'
         },
@@ -33,11 +34,29 @@ angular.module('angularTreeAutocomplete', [])
             // Set the initial value of the input to the object name, for accessibility.
             var unregisterFn = scope.$watch(function() { return ngModelCtrl.$modelValue; }, initialize);
             function initialize(value) {
+                // Ensure that ngModel has initialized modelValue.
                 if (typeof(value) === 'string') {
-                    lookupService.getResultById(value, scope.lookup, scope.source).then(function(result) {
-                        ngModelCtrl.$viewValue = result.name;
-                        ngModelCtrl.$render();
-                    });
+
+                    if (scope.init !== undefined) {
+                        // Check whether a promise was passed into the directive
+                        if (scope.init.hasOwnProperty('rest') && typeof(scope.init.get) === 'function') {
+                            scope.init.get(value).then(function(result) {
+                                ngModelCtrl.$viewValue = result.name;
+                                ngModelCtrl.$render();
+                            });
+                        } else {
+                            lookupService.getResultById(value, scope.lookup, scope.init).then(function(result) {
+                                ngModelCtrl.$viewValue = result.name;
+                                ngModelCtrl.$render();
+                            });
+                        }
+                    } else {
+                        lookupService.getResultById(value, scope.lookup, scope.source).then(function(result) {
+                            ngModelCtrl.$viewValue = result.name;
+                            ngModelCtrl.$render();
+                        });
+                    }
+
                     unregisterFn();
                 }
             }
