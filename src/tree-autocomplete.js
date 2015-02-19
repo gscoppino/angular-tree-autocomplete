@@ -1,18 +1,18 @@
 angular.module('angularTreeAutocomplete', [])
 
 .service('lookupService', ['$q', '$filter', function($q, $filter) {
-    this.getResultById = function(id, filter, source) {
+    this.getResultById = function(id, filter, source, sourceProvider) {
         var resultDeferred = $q.defer();
-        $filter(filter)(id, source).then(function(results) {
+        $filter(filter)(id, source, sourceProvider).then(function(results) {
             resultDeferred.resolve(results[0]);
         });
         return resultDeferred.promise;
     }
 
-    this.findResults = function(query, filter, source) {
+    this.findResults = function(query, filter, source, sourceProvider) {
         var resultsDeferred = $q.defer();
 
-        $filter(filter)(query, source).then(function(results) {
+        $filter(filter)(query, source, sourceProvider).then(function(results) {
             resultsDeferred.resolve(results);
         });
 
@@ -26,7 +26,7 @@ angular.module('angularTreeAutocomplete', [])
         require: 'ngModel',
         scope: {
             'lookup': '@',
-            'init': '=',
+            'sourceProvider': '=',
             'source': '=',
             'callback': '&'
         },
@@ -37,21 +37,20 @@ angular.module('angularTreeAutocomplete', [])
                 // Ensure that ngModel has initialized modelValue.
                 if (typeof(value) === 'string') {
 
-                    if (scope.init !== undefined) {
-                        // Check whether a promise was passed into the directive
-                        if (scope.init.hasOwnProperty('rest') && typeof(scope.init.get) === 'function') {
-                            scope.init.get(value).then(function(result) {
+                    if (scope.sourceProvider !== undefined) {
+                        if (scope.sourceProvider.hasOwnProperty('rest') && typeof(scope.sourceProvider.get) === 'function') { 
+                            scope.sourceProvider.get(value).then(function(result) {
                                 ngModelCtrl.$viewValue = result.name;
                                 ngModelCtrl.$render();
                             });
                         } else {
-                            lookupService.getResultById(value, scope.lookup, scope.init).then(function(result) {
+                            lookupService.getResultById(value, scope.lookup, scope.source, scope.sourceProvider).then(function(result) {
                                 ngModelCtrl.$viewValue = result.name;
                                 ngModelCtrl.$render();
                             });
                         }
                     } else {
-                        lookupService.getResultById(value, scope.lookup, scope.source).then(function(result) {
+                        lookupService.getResultById(value, scope.lookup, scope.source, scope.sourceProvider).then(function(result) {
                             ngModelCtrl.$viewValue = result.name;
                             ngModelCtrl.$render();
                         });
@@ -96,7 +95,7 @@ angular.module('angularTreeAutocomplete', [])
                     /** React to the user input by doing a lookup **/
                     scope.inputHasFocus = true;
 
-                    lookupService.findResults(input, scope.lookup, scope.source).then(function(results) {
+                    lookupService.findResults(input, scope.lookup, scope.source, scope.sourceProvider).then(function(results) {
                         if (angular.equals(results, scope.currentResults)) {
                             return;
                         }
