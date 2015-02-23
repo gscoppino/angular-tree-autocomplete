@@ -31,12 +31,17 @@ angular.module('angularTreeAutocomplete', [])
             'callback': '&'
         },
         link: function(scope, iElement, iAttrs, ngModelCtrl) {
+            // Equal to scope.source if it is not a restangular source, otherwise it will equal the result
+            // of a getList method.
+            var resultCandidates = undefined;
+
             // Set the initial value of the input to the object name, for accessibility.
             var unregisterFn = scope.$watch(function() { return ngModelCtrl.$modelValue; }, initialize);
             function initialize(value) {
                 // Ensure that ngModel has initialized modelValue.
                 if (typeof(value) === 'string') {
 
+                    // Use sourceProvider to get the name of the current option.
                     if (scope.sourceProvider !== undefined) {
                         if (scope.sourceProvider.hasOwnProperty('rest') && typeof(scope.sourceProvider.get) === 'function') { 
                             scope.sourceProvider.get(value).then(function(result) {
@@ -50,10 +55,18 @@ angular.module('angularTreeAutocomplete', [])
                             });
                         }
                     } else {
-                        lookupService.getResultById(value, scope.lookup, scope.source, scope.sourceProvider).then(function(result) {
-                            ngModelCtrl.$viewValue = result.name;
-                            ngModelCtrl.$render();
-                        });
+                        // Hmm...
+                    }
+
+                    // Get the list of result candidates to filter.
+                    if (scope.source !== undefined) {
+                        if (scope.source.hasOwnProperty('rest') && typeof(scope.source.getList) === 'function') {
+                            resultCandidates = scope.source.getList().then(function(results) { resultCandidates.resolve(results); });
+                        } else {
+                            resultCandidates = $q.defer().resolve(scope.source);
+                        }
+                    } else {
+                        // Hmm...
                     }
 
                     unregisterFn();
@@ -95,18 +108,20 @@ angular.module('angularTreeAutocomplete', [])
                     /** React to the user input by doing a lookup **/
                     scope.inputHasFocus = true;
 
-                    lookupService.findResults(input, scope.lookup, scope.source, scope.sourceProvider).then(function(results) {
-                        if (angular.equals(results, scope.currentResults)) {
-                            return;
-                        }
+                    resultCandidates.then(function(result) {
+                        lookupService.findResults(input, scope.lookup, resultCandidates, scope.sourceProvider).then(function(results) {
+                            if (angular.equals(results, scope.currentResults)) {
+                                return;
+                            }
 
-                        scope.currentResults = results;        
-                        angular.element(document.querySelectorAll('.autocomplete')).remove();
-                        iElement.after($compile('' +
-                            '<div lookup-results ng-show="inputHasFocus" class="autocomplete" ' +
-                                 'current-results="currentResults" ' +
-                                 'option-select="selectOption">' +
-                            '</div>')(scope));
+                            scope.currentResults = results;
+                            angular.element(document.querySelectorAll('.autocomplete')).remove();
+                            iElement.after($compile('' +
+                                '<div lookup-results ng-show="inputHasFocus" class="autocomplete" ' +
+                                     'current-results="currentResults" ' +
+                                     'option-select="selectOption">' +
+                                '</div>')(scope));
+                        });
                     });
 
                     // Leave the model undefined for now.
