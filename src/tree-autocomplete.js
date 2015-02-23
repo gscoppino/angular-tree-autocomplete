@@ -9,7 +9,7 @@ angular.module('angularTreeAutocomplete', [])
         return resultDeferred.promise;
     }
 
-    this.findResults = function(query, filter, source, sourceProvider) {
+    this.getResults = function(query, filter, source, sourceProvider) {
         var resultsDeferred = $q.defer();
 
         $filter(filter)(query, source, sourceProvider).then(function(results) {
@@ -17,6 +17,10 @@ angular.module('angularTreeAutocomplete', [])
         });
 
         return resultsDeferred.promise;
+    }
+
+    this.wrapPromise = function(value) {
+        return $q.defer().resolve(value);
     }
 }])
 
@@ -63,7 +67,7 @@ angular.module('angularTreeAutocomplete', [])
                         if (scope.source.hasOwnProperty('rest') && typeof(scope.source.getList) === 'function') {
                             resultCandidates = scope.source.getList().then(function(results) { resultCandidates.resolve(results); });
                         } else {
-                            resultCandidates = $q.defer().resolve(scope.source);
+                            resultCandidates = lookupService.wrapPromise(scope.source);
                         }
                     } else {
                         // Hmm...
@@ -109,7 +113,7 @@ angular.module('angularTreeAutocomplete', [])
                     scope.inputHasFocus = true;
 
                     resultCandidates.then(function(result) {
-                        lookupService.findResults(input, scope.lookup, resultCandidates, scope.sourceProvider).then(function(results) {
+                        lookupService.getResults(input, scope.lookup, resultCandidates, scope.sourceProvider).then(function(results) {
                             if (angular.equals(results, scope.currentResults)) {
                                 return;
                             }
