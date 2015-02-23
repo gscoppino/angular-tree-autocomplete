@@ -71,6 +71,7 @@ angular.module('angularTreeAutocomplete', [])
                         }
                     } else {
                         // Hmm...
+                        resultCandidates = null;
                     }
 
                     unregisterFn();
