@@ -1,0 +1,3 @@
+`angular-tree-autocomplete` is an input element autocompletion directive for AngularJS created specifically to address use cases where the `modelValue` and `viewValue` of an `ngInput` need to be more effectively separated from each other. With this directive, you can have the `viewValue` and the autocompletion use one format for the data value, and the `modelValue` can represent the data value in a completely different way.
+
+A good example of where this is useful, is using database id's as `modelValue`'s, while using a name representation as the `viewValue`. Right now this is actually how it is hardcoded to work (hehe) but I'm planning to fix that real soon so you can perform a loose binding of any two representations of the data.
