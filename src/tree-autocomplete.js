@@ -65,7 +65,7 @@ angular.module('angularTreeAutocomplete', [])
                     // Get the list of result candidates to filter.
                     if (scope.source !== undefined) {
                         if (scope.source.hasOwnProperty('rest') && typeof(scope.source.getList) === 'function') {
-                            resultCandidates = scope.source.getList().then(function(results) { resultCandidates.resolve(results); });
+                            resultCandidates = scope.source.getList();
                         } else {
                             resultCandidates = lookupService.wrapPromise(scope.source);
                         }
