@@ -37,7 +37,7 @@ angular.module('angularTreeAutocomplete', [])
         link: function(scope, iElement, iAttrs, ngModelCtrl) {
             // Equal to scope.source if it is not a restangular source, otherwise it will equal the result
             // of a getList method.
-            var resultCandidates = undefined;
+            scope.resultCandidates = undefined;
 
             // Set the initial value of the input to the object name, for accessibility.
             var unregisterFn = scope.$watch(function() { return ngModelCtrl.$modelValue; }, initialize);
@@ -65,13 +65,13 @@ angular.module('angularTreeAutocomplete', [])
                     // Get the list of result candidates to filter.
                     if (scope.source !== undefined) {
                         if (scope.source.hasOwnProperty('rest') && typeof(scope.source.getList) === 'function') {
-                            resultCandidates = scope.source.getList();
+                            scope.resultCandidates = scope.source.getList();
                         } else {
-                            resultCandidates = lookupService.wrapPromise(scope.source);
+                            scope.resultCandidates = lookupService.wrapPromise(scope.source);
                         }
                     } else {
                         // Hmm...
-                        resultCandidates = null;
+                        scope.resultCandidates = null;
                     }
 
                     unregisterFn();
@@ -113,8 +113,8 @@ angular.module('angularTreeAutocomplete', [])
                     /** React to the user input by doing a lookup **/
                     scope.inputHasFocus = true;
 
-                    resultCandidates.then(function(result) {
-                        lookupService.getResults(input, scope.lookup, resultCandidates, scope.sourceProvider).then(function(results) {
+                    scope.resultCandidates.then(function(result) {
+                        lookupService.getResults(input, scope.lookup, scope.resultCandidates, scope.sourceProvider).then(function(results) {
                             if (angular.equals(results, scope.currentResults)) {
                                 return;
                             }
