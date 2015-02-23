@@ -116,7 +116,7 @@ angular.module('angularTreeAutocomplete', [])
                     scope.inputHasFocus = true;
 
                     scope.resultCandidates.then(function(result) {
-                        lookupService.getResults(input, scope.lookup, scope.resultCandidates, scope.sourceProvider).then(function(results) {
+                        lookupService.getResults(input, scope.lookup, result, scope.sourceProvider).then(function(results) {
                             if (angular.equals(results, scope.currentResults)) {
                                 return;
                             }
