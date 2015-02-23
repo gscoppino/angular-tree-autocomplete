@@ -20,7 +20,9 @@ angular.module('angularTreeAutocomplete', [])
     }
 
     this.wrapPromise = function(value) {
-        return $q.defer().resolve(value);
+        var wrapper = $q.defer();
+        wrapper.resolve(value);
+        return wrapper.promise;
     }
 }])
 
