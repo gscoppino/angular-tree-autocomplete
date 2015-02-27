@@ -66,7 +66,7 @@ angular.module('AngularAutocompleteDemo', ['ui.bootstrap', 'angularTreeAutocompl
 }])
 
 .controller('AutocompleteCtrl', function($scope) {
-    console.log('Loaded AutocompleteCtrl');
+    $scope.query = '', $scope.query2 = '', $scope.query3 = '';
     $scope.treeDemo = [
     { 
         'name': 'Car',
