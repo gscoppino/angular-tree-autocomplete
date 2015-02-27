@@ -36,6 +36,10 @@ angular.module('angularTreeAutocomplete', [])
             'callback': '&'
         },
         link: function(scope, iElement, iAttrs, ngModelCtrl) {
+
+            // Store the current selection for resetting the view if necessary.
+            scope.currentSelection = undefined;
+
             // Equal to scope.source if it is not a restangular source, otherwise it will equal the result
             // of a getList method.
             scope.resultCandidates = undefined;
@@ -54,12 +58,12 @@ angular.module('angularTreeAutocomplete', [])
                             // Get the name representation for the id.
                             if (typeof(scope.source.get) === 'function') {
                                 scope.source.get(value).then(function(result) {
-                                    ngModelCtrl.$viewValue = result.name;
+                                    scope.currentSelection = ngModelCtrl.$viewValue = result.name;
                                     ngModelCtrl.$render();
                                 });
                             } else {
                                 lookupService.getResultById(value, scope.lookup, scope.source).then(function(result) {
-                                    ngModelCtrl.$viewValue = result.name;
+                                    scope.currentSelection = ngModelCtrl.$viewValue = result.name;
                                     ngModelCtrl.$render();
                                 });
                             }
@@ -72,7 +76,7 @@ angular.module('angularTreeAutocomplete', [])
                             }
                         } else {
                             lookupService.getResultById(value, scope.lookup, scope.source).then(function(result) {
-                                ngModelCtrl.$viewValue = result.name;
+                                scope.currentSelection = ngModelCtrl.$viewValue = result.name;
                                 ngModelCtrl.$render();
                             });
 
@@ -86,12 +90,21 @@ angular.module('angularTreeAutocomplete', [])
 
             scope.currentResults = [];
             scope.inputHasFocus = true;
+
+            scope.resetOption = function() {
+                ngModelCtrl.$viewValue = scope.currentSelection;
+                ngModelCtrl.$render();
+                angular.element(document.querySelectorAll('.autocomplete')).remove(); 
+                iElement[0].focus();
+            }
+
             scope.selectOption = function(resultObj) {
                 var result = resultObj.result;
 
                 ngModelCtrl.$modelValue = result.id;
-                ngModelCtrl.$viewValue = result.name;
+                scope.currentSelection = ngModelCtrl.$viewValue = result.name;
                 ngModelCtrl.$render();
+                angular.element(document.querySelectorAll('.autocomplete')).remove();
                 iElement[0].focus();
 
                 if (scope.callback()) {
@@ -141,9 +154,10 @@ angular.module('angularTreeAutocomplete', [])
             });
 
             iElement.on('keyup', function(event) {
-                if (event.keyCode === 13) {
+                if (event.keyCode === 13) { // Enter
                     scope.selectOption({ 'result': scope.currentResults[0] });
-                    angular.element(document.querySelectorAll('.autocomplete')).remove();
+                } else if (event.keyCode === 27) { // Escape
+                    scope.resetOption();
                 }
             });
 
