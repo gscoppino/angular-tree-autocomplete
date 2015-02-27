@@ -47,10 +47,11 @@ angular.module('angularTreeAutocomplete', [])
                 if (typeof(value) === 'string') {
 
                     // Remove the watcher
-                    unregisterFn();
+                    // unregisterFn();
 
                     if (scope.source !== undefined) {
                         if (scope.source.hasOwnProperty('rest')) {
+                            // Get the name representation for the id.
                             if (typeof(scope.source.get) === 'function') {
                                 scope.source.get(value).then(function(result) {
                                     ngModelCtrl.$viewValue = result.name;
@@ -69,6 +70,13 @@ angular.module('angularTreeAutocomplete', [])
                             } else {
                                 scope.resultCandidates = lookupService.wrapPromise(scope.source);
                             }
+                        } else {
+                            lookupService.getResultById(value, scope.lookup, scope.source).then(function(result) {
+                                ngModelCtrl.$viewValue = result.name;
+                                ngModelCtrl.$render();
+                            });
+
+                            scope.resultCandidates = lookupService.wrapPromise(scope.source);
                         }
                     } else {
                         scope.resultCandidates = undefined;
