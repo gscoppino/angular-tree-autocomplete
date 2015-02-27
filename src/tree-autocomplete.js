@@ -1,6 +1,7 @@
 angular.module('angularTreeAutocomplete', [])
 
 .service('lookupService', ['$q', '$filter', function($q, $filter) {
+
     this.getResultById = function(id, filter, source) {
         var resultDeferred = $q.defer();
         $filter(filter)(id, source).then(function(results) {
@@ -36,6 +37,10 @@ angular.module('angularTreeAutocomplete', [])
             'callback': '&'
         },
         link: function(scope, iElement, iAttrs, ngModelCtrl) {
+            if (!ngModelCtrl) {
+                console.log('angular-tree-autocomplete: ngModelCtrl not found.');
+                return;
+            }
 
             // Store the current selection for resetting the view if necessary.
             scope.currentSelection = undefined;
@@ -45,13 +50,11 @@ angular.module('angularTreeAutocomplete', [])
             scope.resultCandidates = undefined;
 
             // Set the initial value of the input to the object name, for accessibility.
-            var unregisterFn = scope.$watch(function() { return ngModelCtrl.$modelValue; }, initialize);
+            scope.$watch(function() { return ngModelCtrl.$modelValue; }, initialize);
             function initialize(value) {
+                console.log('Debug: ' + 'The value of $modelValue has changed! ' + 'New Value: ' + value);
                 // Ensure that ngModel has initialized modelValue.
                 if (typeof(value) === 'string') {
-
-                    // Remove the watcher
-                    // unregisterFn();
 
                     if (scope.source !== undefined) {
                         if (scope.source.hasOwnProperty('rest')) {
@@ -68,11 +71,13 @@ angular.module('angularTreeAutocomplete', [])
                                 });
                             }
 
-                            // Get the list of result candidates to filter.
-                            if (typeof(scope.source.getList) === 'function') {
-                                scope.resultCandidates = scope.source.getList();
-                            } else {
-                                scope.resultCandidates = lookupService.wrapPromise(scope.source);
+                            // Get the list of result candidates to filter, once.
+                            if (!scope.resultCandidates) {
+                                if (typeof(scope.source.getList) === 'function') {
+                                    scope.resultCandidates = scope.source.getList();
+                                } else {
+                                    scope.resultCandidates = lookupService.wrapPromise(scope.source);
+                                }
                             }
                         } else {
                             lookupService.getResultById(value, scope.lookup, scope.source).then(function(result) {
@@ -95,18 +100,22 @@ angular.module('angularTreeAutocomplete', [])
                 ngModelCtrl.$viewValue = scope.currentSelection;
                 ngModelCtrl.$render();
                 angular.element(document.querySelectorAll('.autocomplete')).remove(); 
-                iElement[0].focus();
             }
 
             scope.selectOption = function(resultObj) {
                 var result = resultObj.result;
 
-                ngModelCtrl.$modelValue = result.id;
-                scope.currentSelection = ngModelCtrl.$viewValue = result.name;
-                ngModelCtrl.$render();
+                /** Place the ID into the view, causing $parsers to execute
+                    and set the modelValue to the new ID. The watcher on $modelValue
+                    will then execute and update the view with the name representation
+                    of the ID **/
+                ngModelCtrl.$setViewValue(result.id);
+
+                // DOM Cleanup
                 angular.element(document.querySelectorAll('.autocomplete')).remove();
                 iElement[0].focus();
 
+                // Execute callback function, if provided to the directive.
                 if (scope.callback()) {
                     callback()(result);
                 }
@@ -118,6 +127,7 @@ angular.module('angularTreeAutocomplete', [])
 
             ngModelCtrl.$parsers.unshift(function(input) {
                 if (input.match(/^([0-9a-fA-F]{24})/) && scope.currentResults.length) {
+                    console.log('Debug: ' + 'ID Match! Sending to modelValue. ' + 'Input: ' + input);
                     // This is a match even if the user doesn't select it explicitly.
                     // Remove the autocomplete from the DOM and update the modelValue.
 
@@ -126,6 +136,7 @@ angular.module('angularTreeAutocomplete', [])
                         $nextEl.remove();
                         $nextEl = undefined;
                     }
+                    iElement[0].focus();
 
                     return input;
                 } else {
@@ -143,7 +154,8 @@ angular.module('angularTreeAutocomplete', [])
                             iElement.after($compile('' +
                                 '<div lookup-results ng-show="inputHasFocus" class="autocomplete" ' +
                                      'current-results="currentResults" ' +
-                                     'select-option="selectOption">' +
+                                     'select-option="selectOption" ' +
+                                     'reset-option="resetOption">' +
                                 '</div>')(scope));
                         });
                     });
@@ -160,25 +172,39 @@ angular.module('angularTreeAutocomplete', [])
                     scope.resetOption();
                 }
             });
-
-            iElement.on('blur', function(event) {
-                // if a user clicks on/in the autocomplete inputHasFocus should remain true
-            });
         }
     }
 }])
-.directive('lookupResults', function() {
+.directive('lookupResults', ['$document', function($document) {
     return {
         restrict: 'A',
         scope: {
             'currentResults': '=',
             'selectOption': '&',
+            'resetOption': '&'
         },
-        template: '<div lookup-result ng-repeat="result in currentResults">' +
+        template: '<div class="lookup-result" lookup-result ng-repeat="result in currentResults">' +
                        '<div>' + '{{ result.name }}' + '</div>' +
-                  '</div>'
+                  '</div>',
+        link: function(scope, iElement, iAttrs) {
+            $document.on('click', function(event) {
+                event.stopImmediatePropagation();
+                var target = event.target;
+
+                if (target === iElement[0].previousSibling || 
+                    target == iElement[0] || 
+                    target.parentNode == iElement[0] || target.parentNode.parentNode == iElement[0]) { return; }
+
+                scope.resetOption()();
+                scope.$destroy();
+            });
+
+            scope.$on('$destroy', function() {
+                $document.off('click');
+            });
+        }
     }
-})
+}])
 .directive('lookupResult', function() {
     return {
         restrict: 'A',

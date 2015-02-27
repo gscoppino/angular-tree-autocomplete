@@ -1,11 +1,11 @@
 .autocomplete {
     background-color: #EEE;
-    border-radius: 5px;
-    padding: 5px;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
 }
 
 .autocomplete > div {
-    padding: 5px;
+    padding: 10px;
 }
 
 .autocomplete > div:hover {
