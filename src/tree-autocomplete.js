@@ -143,7 +143,7 @@ angular.module('angularTreeAutocomplete', [])
                             iElement.after($compile('' +
                                 '<div lookup-results ng-show="inputHasFocus" class="autocomplete" ' +
                                      'current-results="currentResults" ' +
-                                     'option-select="selectOption">' +
+                                     'select-option="selectOption">' +
                                 '</div>')(scope));
                         });
                     });
@@ -172,7 +172,7 @@ angular.module('angularTreeAutocomplete', [])
         restrict: 'A',
         scope: {
             'currentResults': '=',
-            'optionSelect': '&',
+            'selectOption': '&',
         },
         template: '<div lookup-result ng-repeat="result in currentResults">' +
                        '<div>' + '{{ result.name }}' + '</div>' +
@@ -184,7 +184,7 @@ angular.module('angularTreeAutocomplete', [])
         restrict: 'A',
         link: function(scope, iElement, iAttrs) {
             iElement.on('click', function() {
-                scope.optionSelect()({ 'result': scope.result });
+                scope.selectOption()({ 'result': scope.result });
                 iElement.parent().remove();
             });
         }
