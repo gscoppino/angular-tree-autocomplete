@@ -1,18 +1,18 @@
 angular.module('angularTreeAutocomplete', [])
 
 .service('lookupService', ['$q', '$filter', function($q, $filter) {
-    this.getResultById = function(id, filter, source, sourceProvider) {
+    this.getResultById = function(id, filter, source) {
         var resultDeferred = $q.defer();
-        $filter(filter)(id, source, sourceProvider).then(function(results) {
+        $filter(filter)(id, source).then(function(results) {
             resultDeferred.resolve(results[0]);
         });
         return resultDeferred.promise;
     }
 
-    this.getResults = function(query, filter, source, sourceProvider) {
+    this.getResults = function(query, filter, source) {
         var resultsDeferred = $q.defer();
 
-        $filter(filter)(query, source, sourceProvider).then(function(results) {
+        $filter(filter)(query, source).then(function(results) {
             resultsDeferred.resolve(results);
         });
 
@@ -32,7 +32,6 @@ angular.module('angularTreeAutocomplete', [])
         require: 'ngModel',
         scope: {
             'lookup': '@',
-            'sourceProvider': '=',
             'source': '=',
             'callback': '&'
         },
@@ -47,36 +46,33 @@ angular.module('angularTreeAutocomplete', [])
                 // Ensure that ngModel has initialized modelValue.
                 if (typeof(value) === 'string') {
 
-                    // Use sourceProvider to get the name of the current option.
-                    if (scope.sourceProvider !== undefined) {
-                        if (scope.sourceProvider.hasOwnProperty('rest') && typeof(scope.sourceProvider.get) === 'function') { 
-                            scope.sourceProvider.get(value).then(function(result) {
-                                ngModelCtrl.$viewValue = result.name;
-                                ngModelCtrl.$render();
-                            });
-                        } else {
-                            lookupService.getResultById(value, scope.lookup, scope.source, scope.sourceProvider).then(function(result) {
-                                ngModelCtrl.$viewValue = result.name;
-                                ngModelCtrl.$render();
-                            });
-                        }
-                    } else {
-                        // Hmm...
-                    }
-
-                    // Get the list of result candidates to filter.
-                    if (scope.source !== undefined) {
-                        if (scope.source.hasOwnProperty('rest') && typeof(scope.source.getList) === 'function') {
-                            scope.resultCandidates = scope.source.getList();
-                        } else {
-                            scope.resultCandidates = lookupService.wrapPromise(scope.source);
-                        }
-                    } else {
-                        // Hmm...
-                        scope.resultCandidates = null;
-                    }
-
+                    // Remove the watcher
                     unregisterFn();
+
+                    if (scope.source !== undefined) {
+                        if (scope.source.hasOwnProperty('rest')) {
+                            if (typeof(scope.source.get) === 'function') {
+                                scope.source.get(value).then(function(result) {
+                                    ngModelCtrl.$viewValue = result.name;
+                                    ngModelCtrl.$render();
+                                });
+                            } else {
+                                lookupService.getResultById(value, scope.lookup, scope.source).then(function(result) {
+                                    ngModelCtrl.$viewValue = result.name;
+                                    ngModelCtrl.$render();
+                                });
+                            }
+
+                            // Get the list of result candidates to filter.
+                            if (typeof(scope.source.getList) === 'function') {
+                                scope.resultCandidates = scope.source.getList();
+                            } else {
+                                scope.resultCandidates = lookupService.wrapPromise(scope.source);
+                            }
+                        }
+                    } else {
+                        scope.resultCandidates = undefined;
+                    }
                 }
             }
 
@@ -112,11 +108,11 @@ angular.module('angularTreeAutocomplete', [])
 
                     return input;
                 } else {
-                    /** React to the user input by doing a lookup **/
+                    // React to the user input by doing a lookup
                     scope.inputHasFocus = true;
 
                     scope.resultCandidates.then(function(result) {
-                        lookupService.getResults(input, scope.lookup, result, scope.sourceProvider).then(function(results) {
+                        lookupService.getResults(input, scope.lookup, result).then(function(results) {
                             if (angular.equals(results, scope.currentResults)) {
                                 return;
                             }
