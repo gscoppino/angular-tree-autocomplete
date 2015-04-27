@@ -27,7 +27,7 @@ angular.module('angularTreeAutocomplete', [])
     }
 }])
 
-.directive('lookup', ['$compile', 'lookupService', function($compile, lookupService) {
+.directive('lookup', ['$compile', '$log', 'lookupService', function($compile, $log, lookupService) {
     return {
         restrict: 'A',
         require: 'ngModel',
@@ -38,7 +38,7 @@ angular.module('angularTreeAutocomplete', [])
         },
         link: function(scope, iElement, iAttrs, ngModelCtrl) {
             if (!ngModelCtrl) {
-                console.log('angular-tree-autocomplete: ngModelCtrl not found.');
+                $log.error('angular-tree-autocomplete: ngModelCtrl not found.');
                 return;
             }
 
@@ -52,7 +52,7 @@ angular.module('angularTreeAutocomplete', [])
             // Set the initial value of the input to the object name, for accessibility.
             scope.$watch(function() { return ngModelCtrl.$modelValue; }, initialize);
             function initialize(value) {
-                console.log('Debug: ' + 'The value of $modelValue has changed! ' + 'New Value: ' + value);
+                $log.debug('The value of $modelValue has changed! ' + 'New Value: ' + value);
                 // Ensure that ngModel has initialized modelValue.
                 if (typeof(value) === 'string') {
 
@@ -127,7 +127,7 @@ angular.module('angularTreeAutocomplete', [])
 
             ngModelCtrl.$parsers.unshift(function(input) {
                 if (input.match(/^([0-9a-fA-F]{24})/) && scope.currentResults.length) {
-                    console.log('Debug: ' + 'ID Match! Sending to modelValue. ' + 'Input: ' + input);
+                    $log.debug('ID Match! Sending to modelValue. ' + 'Input: ' + input);
                     // This is a match even if the user doesn't select it explicitly.
                     // Remove the autocomplete from the DOM and update the modelValue.
 
